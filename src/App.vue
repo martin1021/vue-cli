@@ -1,21 +1,86 @@
 <template>
-  <div id="app" class="container mt-5">
-    <h1>IDShop</h1>
-    <p class="animated fadeInRight delay-2s">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Amet unde sequi non quisquam facilis dicta nesciunt earum
-      nostrum illum eos facere, distinctio, similique, quo assumenda eligendi? Doloremque adipisci minus consectetur!</p>
-      <font-awesome-icon icon="shopping-cart"></font-awesome-icon>
+  <div id="app" class="container">
+    <products
+      :cart="cart"
+      :cartQty="cartQty"
+      :cartTotal="cartTotal"
+      :maximum.sync="maximum"
+      :products="products"
+      :sliderStatus="sliderStatus"
+      @toggle="toggleSliderStatus"
+      @add="addItem"
+      @delete="deleteItem"></products>
   </div>
 </template>
 
+
 <script>
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import Products from "./components/Products.vue";
 
 export default {
-  name: "App",
-  components: {
-    FontAwesomeIcon,
+  name: "app",
+  data: function () {
+    return {
+      maximum: 50,
+      products: [],
+      cart: [],
+      sliderStatus: false
+    }
   },
+  components: {
+    Products
+  },
+  mounted: function () {
+    fetch('https://hplussport.com/api/products/order/price')
+        .then(response => response.json())
+        .then(data => {
+            this.products = data;
+        });
+  },
+  computed: {
+    cartTotal: function () {
+        let sum = 0;
+        for (let key in this.cart) {
+            sum = sum + (this.cart[key].product.price * this.cart[key].qty);
+        }
+        return sum;
+    },
+    cartQty: function () {
+        let qty = 0;
+        for (let key in this.cart) {
+            qty = qty + this.cart[key].qty;
+        }
+        return qty;
+    }
+  },
+  methods: {
+    toggleSliderStatus: function () {
+      this.sliderStatus = !this.sliderStatus;
+    },
+    addItem: function (product) {
+        let productIndex;
+        let productExist = this.cart.filter(function (item, index) {
+            if (item.product.id == Number(product.id)) {
+                productIndex = index;
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        if (productExist.length) {
+            this.cart[productIndex].qty++
+        } else {
+            this.cart.push({ product: product, qty: 1 });
+        }
+    },
+    deleteItem: function (id) {
+      if (this.cart[id].qty > 1) {
+          this.cart[id].qty--;
+      } else {
+          this.cart.splice(id, 1);
+      }
+    }
+  }
 };
 </script>
-
-
